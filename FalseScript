@@ -6,15 +6,25 @@ local PlayerBin = game:GetService("Players")
 local chr = PlayerBin.LocalPlayer.Character     -- for teleporting the player
 local tCFR = chr.HumanoidRootPart.CFrame.p      -- for teleporting the player to their original place
 local Shadows = game.Workspace:WaitForChild("Shadows")
+local crates = game:GetService("Players").LocalPlayer.Crates:GetChildren()
+local Initials = {}
 
--- Creating an instance to run the While Loop
+-- setting the initial value of the user's crates
+for i = 1, #crates do
+    
+    table.insert(Initials, crates[i].value)
+    
+end
+
+
+-- Creating an instance to control activation of the While Loop
 if not PlayerBin.LocalPlayer:FindFirstChild("LOOP_CONSTRAINT") then
     
     g_ = Instance.new("TextBox")
     g_.Name = "LOOP_CONSTRAINT"
     g_.Parent = PlayerBin.LocalPlayer
     g_.Transparency = 1
-    g_.Text = "60"
+    g_.Text = "90"
     
     print("Loop constraint created successfully")
     
@@ -24,19 +34,19 @@ else
     
 end
 
+
 -- iter => counts the iteration (for testing i guess)
 local iter = 0
-local total = 0
-local timer = 0.25
+
 
 -- function to count the number of crates/boxes spawned in the workspace
-local function count()
+local function count(location)
     
     val = 0
     
-    for i,v in pairs(Game.Workspace:GetChildren()) do
+    for i,v in pairs(location:GetChildren()) do
         
-        if v:FindFirstChild("TouchInterest", true) and v:FindFirstChild("Open", true) then
+        if v:FindFirstChild("TouchInterest") and v:FindFirstChild("Open") then
             
             val = val + 1
             
@@ -47,12 +57,53 @@ local function count()
     
 end
 
--- simple teleport function
-local function CrateTeleport(Char, Object)
+local function change(r)
     
-    p = Object.CFrame.p
-    Char:SetPrimaryPartCFrame(CFrame.new(p.x, p.y + 1, p.z))
+    step = 0
+    
+    if r == 0 then
+        
+        sum = 0 
+        return 0
+        
+    else
+        for i = 1, #crates do
+            
+            step = step + (crates[i].value - Initials[i])
+            
+        end
+    end
+    
+    return step
+    
+end
 
+
+
+local function caseTeleport(Location)
+    
+    if count(Location) > 0 then
+
+         for i,v in pairs(Location:GetChildren()) do
+                
+            -- checks if there are any crates/any other objects of interest spawned in the workspace
+            if v:FindFirstChild("TouchInterest") and v:FindFirstChild("Open") then
+                
+                -- determines the location of the thing
+                cfPass = v.CFrame.p
+                -- print(cfPass)
+                    
+                -- teleports the player to the object until the object has been picked up
+                chr:SetPrimaryPartCFrame(CFrame.new(cfPass.x, cfPass.y + 1, cfPass.z))
+                wait(0.25)
+                    
+            end
+                
+        end
+        
+        chr:SetPrimaryPartCFrame(CFrame.new(tCFRi.x, tCFRi.y + 1, tCFRi.z))
+        
+    end
 end
 
 while wait(tonumber(PlayerBin.LocalPlayer:FindFirstChild("LOOP_CONSTRAINT").Text)) do
@@ -67,29 +118,11 @@ while wait(tonumber(PlayerBin.LocalPlayer:FindFirstChild("LOOP_CONSTRAINT").Text
         warn("Looping is Active")
         print("Iteration: ", iter)
         
-        print(count(), "Objects")
+        print(count(Game.Workspace) + count(Shadows), "Objects")
         
-        if count() > 0 then
-
-            for i,v in pairs(Game.Workspace:GetChildren()) do
-                
-                -- checks if there are any crates/any other objects of interest spawned in the workspace
-                if v:FindFirstChild("TouchInterest", true) and v:FindFirstChild("Open", true) then
-                    
-                    -- counts the total number of crates obtained ( not 100% precise because some crates may, rarely, not be picked up on their first, respective, iteration )
-                    total = total + 1
-                    
-                    CrateTeleport(chr, v)
-                    
-                    wait(timer)
-                    
-                end
-                
-            end
+        caseTeleport(Game.Workspace)
         
-            chr:SetPrimaryPartCFrame(CFrame.new(tCFRi.x, tCFRi.y + 1, tCFRi.z))
-        
-        end
+        caseTeleport(Shadows)
     
     -- fires true when the user indicates they want to cease the looping ( or terminate the script )
     else
@@ -102,16 +135,20 @@ while wait(tonumber(PlayerBin.LocalPlayer:FindFirstChild("LOOP_CONSTRAINT").Text
             chr:SetPrimaryPartCFrame(CFrame.new(tCFR.x, tCFR.y + 1, tCFR.z))
             
              warn("Loop ceased, waiting indefinitely until indication to restart looping...")
-             print("Total crates thus far:", total)
+             print("Total crates thus far:", change(1))
         
         end    
         
+        -- ends the loop if indicated by the user
+        -- add a while wait(10) or whatever timer for restarting the loop
         if PlayerBin.LocalPlayer:FindFirstChild("LOOP_CONSTRAINT").Transparency == 0.5 then 
             
             warn("LOOP TERMINATED")
-            print("Total crates:", total)
+            print("Total crates:", change(1))
             break end
         
     end
 end
+
+
 
